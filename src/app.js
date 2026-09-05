@@ -2,11 +2,19 @@ const express = require('express');
 
 const app = express();
 
-// Standard middleware for parsing JSON and URL-encoded request bodies
+// Enable JSON request parsing
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Health check endpoint to verify server status
+// Root endpoint: identifies the Shortly API
+app.get('/', (req, res) => {
+  res.status(200).json({
+    name: 'Shortly API',
+    version: '1.0.0',
+    description: 'Production-quality URL shortener service',
+  });
+});
+
+// Health check endpoint: indicates that the server is healthy
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
@@ -15,17 +23,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Root endpoint with service metadata
-app.get('/', (req, res) => {
-  res.status(200).json({
-    name: 'Shortly API',
-    version: '1.0.0',
-    description: 'Production-quality URL shortener service',
-    health: '/health',
-  });
-});
-
-// 404 Handler for undefined routes
+// JSON 404 handler for undefined routes
 app.use((req, res) => {
   res.status(404).json({
     error: 'Not Found',
@@ -33,10 +31,13 @@ app.use((req, res) => {
   });
 });
 
-// Centralized error handling middleware
+// Centralized JSON error-handling middleware
 app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
   console.error('[App Error]', err);
-  const status = err.status || 500;
+  const status = err.status || err.statusCode || 500;
   res.status(status).json({
     error: err.name || 'InternalServerError',
     message: err.message || 'An unexpected error occurred',
