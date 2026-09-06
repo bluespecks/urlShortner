@@ -1,38 +1,47 @@
 # Shortly 🔗
 
-Shortly is a production-quality URL shortener backend service built with Node.js, Express, and MongoDB.
+Shortly is a minimal, production-quality URL shortener service built with Node.js, Express, and MongoDB. It features high-speed redirects, robust input validation, rate limiting, security headers, and an understated, Unix-inspired web interface.
 
 ## Table of Contents
 
-- [Features (Foundation)](#features-foundation)
+- [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
   - [1. Clone and Install](#1-clone-and-install)
-  - [2. Configure Environment Variables](#2-configure-environment-variables)
-  - [3. Run the Application](#3-run-the-application)
+  - [2. Start MongoDB](#2-start-mongodb)
+  - [3. Configure Environment Variables](#3-configure-environment-variables)
+  - [4. Run the Application](#4-run-the-application)
+- [Web Interface](#web-interface)
 - [Available Scripts](#available-scripts)
 - [Endpoints](#endpoints)
+  - [Foundation Endpoints](#foundation-endpoints)
+  - [URL Endpoints](#url-endpoints)
+- [Security & Validation](#security--validation)
 - [Guidelines](#guidelines)
 
 ---
 
-## Features (Foundation)
+## Features
 
-- **Express Application Architecture**: Clean separation between application configuration (`src/app.js`) and HTTP server lifecycle (`src/server.js`).
-- **Database Connection Management**: Robust MongoDB connection management via Mongoose with graceful disconnects.
-- **Centralized Error Handling**: Standardized 404 and global error handling middleware.
-- **Graceful Shutdown**: Listens to `SIGINT` and `SIGTERM` to close HTTP listeners and database connections cleanly.
-- **Development Workflow**: Hot-reloading configured using `nodemon`.
+- **URL Shortening**: Generates unique, URL-safe 6-character Base62 identifiers with automated collision resolution.
+- **Fast HTTP 302 Redirects**: Rapid lookups via unique MongoDB indexes with atomic click incrementing.
+- **Unix-Inspired Web Interface**: Minimalist, keyboard-first developer interface with zero frontend framework overhead.
+- **Rate Limiting**: Built-in rolling-window limiter restricting URL creation to 30 requests per minute per IP.
+- **Hardened Security**: Protected with Helmet (Content Security Policy, X-Frame-Options, X-Content-Type-Options nosniff).
+- **Graceful Lifecycle Management**: Clean connection handling on startup and graceful shutdown hooks for SIGINT/SIGTERM.
+- **Health & Telemetry**: `/health` endpoint reporting uptime, service metadata, and client-measured roundtrip latency.
 
 ## Tech Stack
 
 - **Runtime**: Node.js (JavaScript, CommonJS)
-- **Framework**: Express
-- **Database / ODM**: MongoDB with Mongoose
+- **Framework**: Express v5
+- **Database / ODM**: MongoDB with Mongoose v9
+- **Security & Headers**: Helmet
 - **Configuration**: dotenv
 - **Development Tooling**: nodemon
+- **Frontend**: Vanilla HTML5, CSS3 (monospace design system), Vanilla JavaScript (fetch API)
 
 ## Project Structure
 
@@ -42,24 +51,26 @@ Shortly is a production-quality URL shortener backend service built with Node.js
 │   ├── config/
 │   │   └── db.js            # MongoDB connection and lifecycle handlers
 │   ├── controllers/
-│   │   └── urlController.js # URL route handlers
+│   │   └── urlController.js # Request handlers (validation, response shaping)
+│   ├── middlewares/
+│   │   └── rateLimiter.js   # Rolling-window in-memory rate limiter
 │   ├── models/
-│   │   └── Url.js           # Mongoose model and schema validation
+│   │   └── Url.js           # Mongoose model, schema validation, and unique indexes
 │   ├── public/
 │   │   ├── app.js           # Frontend client application
-│   │   ├── index.html       # Web UI markup
-│   │   └── styles.css       # Unix-inspired stylesheet
+│   │   ├── index.html       # Minimalist Unix-style markup
+│   │   └── styles.css       # Monospace stylesheet
 │   ├── routes/
-│   │   ├── redirectRoutes.js# Root redirect handler
-│   │   └── urlRoutes.js     # /api/urls router
+│   │   ├── redirectRoutes.js# GET /:shortCode redirect router
+│   │   └── urlRoutes.js     # POST /api/urls router
 │   ├── services/
-│   │   └── urlService.js    # URL business logic and collision handling
+│   │   └── urlService.js    # Shortening business logic, collision retries, DB access
 │   ├── utils/
-│   │   └── generateShortCode.js # Short code generation utility
-│   ├── app.js               # Express app, middleware, and route configuration
+│   │   └── generateShortCode.js # Cryptographic Base62 short-code generator
+│   ├── app.js               # Express application assembly & error middleware
 │   └── server.js            # Server entrypoint and graceful shutdown listeners
 ├── .env.example             # Example environment variable configuration
-├── .gitignore               # Ignored files for git (dependencies, secrets, logs)
+├── .gitignore               # Git ignore rules (dependencies, secrets, logs)
 ├── AGENTS.md                # Development guidelines and Conventional Commit conventions
 ├── package.json             # NPM package manifest and scripts
 └── README.md                # Project documentation
@@ -69,7 +80,7 @@ Shortly is a production-quality URL shortener backend service built with Node.js
 
 - [Node.js](https://nodejs.org/) (v18 or higher recommended)
 - [npm](https://www.npmjs.com/) (v9 or higher)
-- [MongoDB](https://www.mongodb.com/) (local instance or MongoDB Atlas URI)
+- [MongoDB](https://www.mongodb.com/) (v6 or higher; local instance or MongoDB Atlas)
 
 ## Getting Started
 
@@ -81,25 +92,44 @@ cd urlShortner
 npm install
 ```
 
-### 2. Configure Environment Variables
+### 2. Start MongoDB
 
-Copy the `.env.example` file to create your local `.env`:
+Before starting the server, ensure MongoDB is running:
+
+**Linux (Systemd):**
+```bash
+sudo systemctl start mongod
+sudo systemctl status mongod
+```
+
+**Manual / Standalone:**
+```bash
+mkdir -p /tmp/mongodb/data
+mongod --dbpath /tmp/mongodb/data --port 27017
+```
+
+**macOS (Homebrew):**
+```bash
+brew services start mongodb-community
+```
+
+### 3. Configure Environment Variables
+
+Copy `.env.example` to create your local `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-Update `.env` with your configuration:
+Update `.env` with your settings:
 
 ```env
 PORT=3000
-MONGODB_URI=mongodb://localhost:27017/shortly
+MONGODB_URI=mongodb://127.0.0.1:27017/shortly
 BASE_URL=http://localhost:3000
 ```
 
-> **Note**: If `MONGODB_URI` is omitted during initial foundation testing, the server will log a warning and continue running the HTTP service.
-
-### 3. Run the Application
+### 4. Run the Application
 
 #### Development Mode (with hot-reload via nodemon):
 ```bash
@@ -115,9 +145,10 @@ npm start
 
 Shortly includes a minimalist, Unix-inspired web interface:
 
-- Start the server (`npm run dev` or `npm start`).
-- Open `http://localhost:3000` in your web browser.
-- The interface communicates directly with `POST /api/urls` to shorten URLs, displays interactive copy/open controls, and queries `GET /health` to display live latency and service status.
+- Start the application and navigate to `http://localhost:3000` in any web browser.
+- Enter any valid HTTP or HTTPS URL and press `Enter` or click `[ ↵ shorten ]`.
+- Copy the resulting short link with `[ copy ]` (provides visual `> copied` feedback) or test it directly with `[ open ↗ ]`.
+- Live latency and API connectivity are continuously checked via `/health`.
 
 ## Available Scripts
 
@@ -131,22 +162,22 @@ Shortly includes a minimalist, Unix-inspired web interface:
 ### Foundation Endpoints
 
 - **`GET /`**
-  Returns service metadata and available links.
+  - Web browser requests (`Accept: text/html`): Delivers the web interface.
+  - API client requests (`Accept: application/json` or curl): Returns service metadata.
 
-  **Response:**
+  **API Response (HTTP 200):**
   ```json
   {
     "name": "Shortly API",
     "version": "1.0.0",
-    "description": "Production-quality URL shortener service",
-    "health": "/health"
+    "description": "Production-quality URL shortener service"
   }
   ```
 
 - **`GET /health`**
-  Health check endpoint to verify that the server is operational.
+  Health check endpoint reporting service availability.
 
-  **Response:**
+  **Response (HTTP 200):**
   ```json
   {
     "status": "ok",
@@ -158,7 +189,7 @@ Shortly includes a minimalist, Unix-inspired web interface:
 ### URL Endpoints
 
 - **`POST /api/urls`**
-  Creates a shortened URL.
+  Creates a shortened URL. Rate-limited to 30 requests per minute per IP.
 
   **Headers:**
   - `Content-Type: application/json`
@@ -166,32 +197,47 @@ Shortly includes a minimalist, Unix-inspired web interface:
   **Request Body:**
   ```json
   {
-    "originalUrl": "https://example.com/some/long/url"
+    "originalUrl": "https://example.com/some/long/path?query=param"
   }
   ```
 
-  **Response (HTTP 201):**
+  **Response (HTTP 201 Created):**
   ```json
   {
-    "originalUrl": "https://example.com/some/long/url",
+    "originalUrl": "https://example.com/some/long/path?query=param",
     "shortCode": "abc123",
     "shortUrl": "http://localhost:3000/abc123"
   }
   ```
 
 - **`GET /:shortCode`**
-  Redirects to the original URL associated with the short code and increments its click counter.
+  Redirects to the stored original URL.
 
   **Response:**
   - `HTTP 302 Found` with `Location: <originalUrl>` on success
-  - `HTTP 404 Not Found` JSON if the short code does not exist:
+  - `HTTP 404 Not Found` JSON if shortCode is non-existent:
     ```json
     {
       "error": "NotFound",
       "message": "Short URL not found"
     }
     ```
+  - `HTTP 400 Bad Request` JSON if shortCode format is invalid:
+    ```json
+    {
+      "error": "BadRequest",
+      "message": "Invalid short code format"
+    }
+    ```
+
+## Security & Validation
+
+- **URL Protocol Validation**: Strictly accepts only absolute URLs starting with `http://` or `https://`. Rejects `ftp://`, `javascript:`, `data:`, relative paths, or non-string inputs.
+- **Short-Code Sanitization**: Format regex (`/^[a-zA-Z0-9_-]{3,30}$/`) ensures malicious path traversals or database operator injections are rejected with HTTP 400 before reaching MongoDB.
+- **Security Headers**: Integrated Helmet middleware setting CSP, `nosniff`, `SAMEORIGIN`, and strict transport rules.
+- **Rate Limiting**: Rolling-window limiter returns HTTP 429 with `Retry-After` and `RateLimit-*` headers without restricting redirects or health probes.
+- **Sanitized Errors**: Internal server errors return clean 500 JSON without exposing stack traces or database connection strings.
 
 ## Guidelines
 
-Before contributing or creating pull requests, please read [AGENTS.md](AGENTS.md) for architectural guidelines and Conventional Commit conventions.
+For architectural standards and commit conventions, consult [AGENTS.md](AGENTS.md).

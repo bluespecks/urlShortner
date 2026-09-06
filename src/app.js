@@ -58,7 +58,7 @@ app.use('/', redirectRoutes);
 // JSON 404 handler for undefined routes
 app.use((req, res) => {
   res.status(404).json({
-    error: 'Not Found',
+    error: 'NotFound',
     message: `Route ${req.method} ${req.originalUrl} not found`,
   });
 });
