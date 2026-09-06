@@ -8,6 +8,7 @@ Shortly is a minimal, production-quality URL shortener service built with Node.j
 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
+- [Engineering Highlights](#engineering-highlights)
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
@@ -47,6 +48,19 @@ Shortly is a minimal, production-quality URL shortener service built with Node.j
 - **Development Tooling**: nodemon
 - **Frontend**: Vanilla HTML5, CSS3 (monospace design system), Vanilla JavaScript (fetch API)
 
+## Engineering Highlights
+
+- **Layered Architecture**: Strict separation of concerns with isolated routing, HTTP controllers, domain services, and Mongoose data models.
+- **Cryptographically Secure Identifiers**: Uses Node.js native `crypto.randomInt` to generate 6-character Base62 codes (`[a-zA-Z0-9]`, ~56.8 billion permutations) without pseudo-random bias.
+- **Collision Resolution**: Automatic retry loop (up to 5 attempts) catching MongoDB unique index violations (`E11000`) before returning responses.
+- **Atomic Click Tracking**: Uses MongoDB's atomic `$inc` operator in `findOneAndUpdate` to prevent race conditions during concurrent redirects.
+- **Defensive Input Validation**: Two-layer validation (controller boundary + Mongoose schema) verifying WHATWG URL specifications (HTTP/HTTPS only) and pre-database regex sanitization (`/^[a-zA-Z0-9_-]{3,30}$/`).
+- **Rolling-Window Rate Limiting**: Lightweight in-memory rate limiter protecting creation endpoints at 30 req/min/IP with standard `RateLimit-*` and `Retry-After` headers.
+- **Security-Hardened Defaults**: Integrated Helmet middleware setting Content Security Policy (`'self'`), MIME sniffing protection (`nosniff`), and frame restriction (`SAMEORIGIN`).
+- **Safe Error Propagation**: Centralized Express error-handling middleware intercepting malformed JSON payloads and masking 500-level database internals in client responses.
+- **Resilient Lifecycle Management**: Sequential DB-first startup ensuring MongoDB readiness before HTTP binding, with graceful shutdown handlers for `SIGINT` and `SIGTERM`.
+- **Zero-Framework Web Client**: High-performance, accessible terminal-inspired interface built with vanilla HTML5, CSS3, and JavaScript with zero build steps or runtime framework bloat.
+
 ## Project Structure
 
 ```text
@@ -85,9 +99,11 @@ Shortly is a minimal, production-quality URL shortener service built with Node.j
 
 ## Prerequisites
 
+Shortly is cross-platform and fully supported on **Linux**, **macOS**, and **Windows**:
+
 - [Node.js](https://nodejs.org/) (v18 or higher recommended)
 - [npm](https://www.npmjs.com/) (v9 or higher)
-- [MongoDB](https://www.mongodb.com/) (v6 or higher; local instance or MongoDB Atlas)
+- [MongoDB](https://www.mongodb.com/) (v6 or higher; local Community Edition or MongoDB Atlas)
 
 ## Getting Started
 
@@ -101,34 +117,70 @@ npm install
 
 ### 2. Start MongoDB
 
-Before starting the server, ensure MongoDB is running:
+Shortly requires a running MongoDB database. Choose the setup option for your operating system:
 
-**Linux (Systemd):**
-```bash
-sudo systemctl start mongod
-sudo systemctl status mongod
-```
+#### Linux
+- **Systemd Service:**
+  ```bash
+  sudo systemctl start mongod
+  sudo systemctl status mongod
+  ```
+- **Standalone Binary:**
+  ```bash
+  mkdir -p /tmp/mongodb/data
+  mongod --dbpath /tmp/mongodb/data --port 27017
+  ```
 
-**Manual / Standalone:**
-```bash
-mkdir -p /tmp/mongodb/data
-mongod --dbpath /tmp/mongodb/data --port 27017
-```
+#### macOS
+- **Homebrew Service:**
+  ```bash
+  brew services start mongodb-community
+  ```
+- **Standalone Binary:**
+  ```bash
+  mkdir -p /usr/local/var/mongodb
+  mongod --dbpath /usr/local/var/mongodb --port 27017
+  ```
 
-**macOS (Homebrew):**
-```bash
-brew services start mongodb-community
-```
+#### Windows
+- **MongoDB Community Windows Service** (installed with MongoDB MSI installer):
+  - In Command Prompt (Run as Administrator):
+    ```cmd
+    net start MongoDB
+    ```
+  - In PowerShell (Run as Administrator):
+    ```powershell
+    Start-Service MongoDB
+    ```
+- **Standalone Binary** (Command Prompt or PowerShell):
+  ```cmd
+  "C:\Program Files\MongoDB\Server\7.0\bin\mongod.exe" --dbpath="C:\data\db"
+  ```
+  *(Ensure `C:\data\db` exists or adjust the path to your MongoDB installation directory).*
+
+#### Cloud Alternative (All Platforms)
+If you prefer not to run MongoDB locally, create a free cluster on [MongoDB Atlas](https://www.mongodb.com/atlas/database) and provide your Atlas connection URI in `.env`.
 
 ### 3. Configure Environment Variables
 
-Copy `.env.example` to create your local `.env`:
+Create your local `.env` file from `.env.example`:
 
+**Linux / macOS:**
 ```bash
 cp .env.example .env
 ```
 
-Update `.env` with your settings:
+**Windows (PowerShell):**
+```powershell
+Copy-Item .env.example .env
+```
+
+**Windows (Command Prompt):**
+```cmd
+copy .env.example .env
+```
+
+Configure your environment settings in `.env`. The default settings below work out-of-the-box on Linux, macOS, and Windows with a default local MongoDB installation:
 
 ```env
 PORT=3000
