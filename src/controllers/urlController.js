@@ -1,6 +1,9 @@
 const Url = require('../models/Url');
 const urlService = require('../services/urlService');
 
+// Valid short code regex: 3 to 30 alphanumeric characters, underscores, or hyphens
+const SHORT_CODE_REGEX = /^[a-zA-Z0-9_-]{3,30}$/;
+
 /**
  * Handle URL shortening requests.
  * Validates request payload and invokes urlService to create a shortened URL.
@@ -56,18 +59,19 @@ const createShortUrl = async (req, res, next) => {
 
 /**
  * Handle short URL redirection requests.
- * Validates short code, performs database lookup with atomic click increment,
- * and redirects to originalUrl (or returns 404 if not found).
+ * Validates short code format before querying MongoDB to prevent injection and malformed queries.
+ * Looks up document by shortCode, increments clicks atomically, and redirects to originalUrl.
  */
 const redirectToOriginalUrl = async (req, res, next) => {
   try {
     const rawCode = req.params.shortCode;
     const shortCode = typeof rawCode === 'string' ? rawCode.trim() : '';
 
-    if (!shortCode) {
-      return res.status(404).json({
-        error: 'NotFound',
-        message: 'Short URL not found',
+    // Validate format before querying database
+    if (!shortCode || !SHORT_CODE_REGEX.test(shortCode)) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: 'Invalid short code format',
       });
     }
 
@@ -89,4 +93,5 @@ const redirectToOriginalUrl = async (req, res, next) => {
 module.exports = {
   createShortUrl,
   redirectToOriginalUrl,
+  SHORT_CODE_REGEX,
 };

@@ -1,9 +1,25 @@
 const path = require('path');
 const express = require('express');
+const helmet = require('helmet');
 const urlRoutes = require('./routes/urlRoutes');
 const redirectRoutes = require('./routes/redirectRoutes');
 
 const app = express();
+
+// Security headers with development-friendly Content Security Policy
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:'],
+        connectSrc: ["'self'"],
+      },
+    },
+  })
+);
 
 // Enable JSON request parsing
 app.use(express.json());
@@ -52,22 +68,38 @@ app.use((err, req, res, next) => {
   if (res.headersSent) {
     return next(err);
   }
+
+  // Handle malformed JSON body errors from express.json()
+  if (err instanceof SyntaxError && (err.status === 400 || err.statusCode === 400) && 'body' in err) {
+    return res.status(400).json({
+      error: 'BadRequest',
+      message: 'Malformed JSON payload in request body',
+    });
+  }
+
   console.error('[App Error]', err);
 
   let status = err.status || err.statusCode || 500;
   let message = err.message || 'An unexpected error occurred';
+  let errorName = err.name || 'InternalServerError';
 
   if (err.name === 'ValidationError') {
     status = 400;
+    errorName = 'BadRequest';
+  }
+
+  if (status === 429) {
+    errorName = 'TooManyRequests';
   }
 
   // Prevent exposing internal stack traces or database details for 5xx errors
   if (status >= 500) {
+    errorName = 'InternalServerError';
     message = 'An unexpected internal error occurred';
   }
 
   res.status(status).json({
-    error: err.name || 'InternalServerError',
+    error: errorName,
     message,
   });
 });
