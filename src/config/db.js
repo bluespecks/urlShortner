@@ -1,37 +1,30 @@
 const mongoose = require('mongoose');
 
 /**
- * Connect to MongoDB instance using Mongoose.
- * @returns {Promise<typeof mongoose | null>}
+ * Connect to MongoDB using Mongoose.
+ * Reads MONGODB_URI from environment variables and propagates errors to the caller.
+ * @returns {Promise<typeof mongoose>}
  */
 const connectDB = async () => {
   const uri = process.env.MONGODB_URI;
 
   if (!uri) {
-    console.warn('[Database] MONGODB_URI is not defined in environment variables. Database connection skipped.');
-    return null;
+    throw new Error('MONGODB_URI is not defined in environment variables');
   }
 
-  try {
-    const conn = await mongoose.connect(uri);
-    console.log(`[Database] MongoDB connected successfully: ${conn.connection.host}`);
-    return conn;
-  } catch (error) {
-    console.error(`[Database] Connection error: ${error.message}`);
-    process.exit(1);
-  }
+  const conn = await mongoose.connect(uri);
+  console.log(`[Database] MongoDB connected successfully: ${conn.connection.host}`);
+  return conn;
 };
 
 /**
- * Disconnect from MongoDB instance.
+ * Disconnect from MongoDB if a connection is active.
  * @returns {Promise<void>}
  */
 const disconnectDB = async () => {
-  try {
+  if (mongoose.connection.readyState !== 0) {
     await mongoose.connection.close();
     console.log('[Database] MongoDB connection closed.');
-  } catch (error) {
-    console.error(`[Database] Error during disconnect: ${error.message}`);
   }
 };
 

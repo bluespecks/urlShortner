@@ -1,26 +1,49 @@
 const dotenv = require('dotenv');
 
-// Load environment variables using dotenv
+// 1. Load environment variables
 dotenv.config();
 
 const app = require('./app');
+const { connectDB, disconnectDB } = require('./config/db');
 
-// Use process.env.PORT || 3000
 const PORT = process.env.PORT || 3000;
 
-// Start the HTTP server
-const server = app.listen(PORT, () => {
-  console.log(`[Server] Shortly server running on port ${PORT}`);
-});
+let server;
 
-// Handle graceful shutdown for SIGTERM and SIGINT
-const handleShutdown = (signal) => {
+// Graceful shutdown handling for SIGINT and SIGTERM
+const handleShutdown = async (signal) => {
   console.log(`\n[Server] Received ${signal}. Initiating graceful shutdown...`);
-  server.close(() => {
-    console.log('[Server] HTTP server closed.');
+
+  if (server) {
+    server.close(async () => {
+      console.log('[Server] HTTP server closed.');
+      await disconnectDB();
+      process.exit(0);
+    });
+  } else {
+    await disconnectDB();
     process.exit(0);
-  });
+  }
 };
 
 process.on('SIGINT', () => handleShutdown('SIGINT'));
 process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+
+// Server startup flow: Connect to DB first, then listen
+async function startServer() {
+  try {
+    // 2. Connect to MongoDB
+    await connectDB();
+
+    // 3. Start HTTP server only after MongoDB connection succeeds
+    server = app.listen(PORT, () => {
+      console.log(`[Server] Shortly server running on port ${PORT}`);
+      console.log(`[Server] Base URL configured as: ${process.env.BASE_URL || `http://localhost:${PORT}`}`);
+    });
+  } catch (error) {
+    console.error(`[Server] Startup failed: ${error.message}`);
+    process.exit(1);
+  }
+}
+
+startServer();
