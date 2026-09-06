@@ -1,6 +1,8 @@
-# Shortly 🔗
+# Shortly
 
 Shortly is a minimal, production-quality URL shortener service built with Node.js, Express, and MongoDB. It features high-speed redirects, robust input validation, rate limiting, security headers, and an understated, Unix-inspired web interface.
+
+![Shortly Web Interface](docs/images/shortly-ui.png)
 
 ## Table of Contents
 
@@ -15,22 +17,24 @@ Shortly is a minimal, production-quality URL shortener service built with Node.j
   - [4. Run the Application](#4-run-the-application)
 - [Web Interface](#web-interface)
 - [Available Scripts](#available-scripts)
-- [Endpoints](#endpoints)
+- [API Reference](#api-reference)
   - [Foundation Endpoints](#foundation-endpoints)
   - [URL Endpoints](#url-endpoints)
 - [Security & Validation](#security--validation)
-- [Guidelines](#guidelines)
+- [License](#license)
 
 ---
 
 ## Features
 
 - **URL Shortening**: Generates unique, URL-safe 6-character Base62 identifiers with automated collision resolution.
+- **Short-Code Generation**: Cryptographically secure random identifiers generated via native `crypto.randomInt`.
 - **Fast HTTP 302 Redirects**: Rapid lookups via unique MongoDB indexes with atomic click incrementing.
-- **Unix-Inspired Web Interface**: Minimalist, keyboard-first developer interface with zero frontend framework overhead.
+- **Robust Input Validation**: Strict validation for absolute HTTP/HTTPS protocols and short-code format sanitization.
 - **Rate Limiting**: Built-in rolling-window limiter restricting URL creation to 30 requests per minute per IP.
-- **Hardened Security**: Protected with Helmet (Content Security Policy, X-Frame-Options, X-Content-Type-Options nosniff).
-- **Graceful Lifecycle Management**: Clean connection handling on startup and graceful shutdown hooks for SIGINT/SIGTERM.
+- **Security Headers**: Hardened with Helmet (Content Security Policy, X-Frame-Options, X-Content-Type-Options nosniff).
+- **Unix-Inspired Web Interface**: Minimalist, keyboard-first developer interface with zero frontend framework overhead.
+- **Graceful Lifecycle Management**: Sequential DB-first startup and graceful shutdown hooks for SIGINT/SIGTERM.
 - **Health & Telemetry**: `/health` endpoint reporting uptime, service metadata, and client-measured roundtrip latency.
 
 ## Tech Stack
@@ -47,6 +51,9 @@ Shortly is a minimal, production-quality URL shortener service built with Node.j
 
 ```text
 .
+├── docs/
+│   └── images/
+│       └── shortly-ui.png   # Web interface preview
 ├── src/
 │   ├── config/
 │   │   └── db.js            # MongoDB connection and lifecycle handlers
@@ -71,8 +78,8 @@ Shortly is a minimal, production-quality URL shortener service built with Node.j
 │   └── server.js            # Server entrypoint and graceful shutdown listeners
 ├── .env.example             # Example environment variable configuration
 ├── .gitignore               # Git ignore rules (dependencies, secrets, logs)
-├── AGENTS.md                # Development guidelines and Conventional Commit conventions
 ├── package.json             # NPM package manifest and scripts
+├── package-lock.json        # NPM dependency lockfile
 └── README.md                # Project documentation
 ```
 
@@ -157,7 +164,7 @@ Shortly includes a minimalist, Unix-inspired web interface:
 | `npm run dev` | `nodemon src/server.js` | Starts server in watch mode with automatic restart on file changes |
 | `npm start` | `node src/server.js` | Starts server in standard production mode |
 
-## Endpoints
+## API Reference
 
 ### Foundation Endpoints
 
@@ -238,6 +245,6 @@ Shortly includes a minimalist, Unix-inspired web interface:
 - **Rate Limiting**: Rolling-window limiter returns HTTP 429 with `Retry-After` and `RateLimit-*` headers without restricting redirects or health probes.
 - **Sanitized Errors**: Internal server errors return clean 500 JSON without exposing stack traces or database connection strings.
 
-## Guidelines
-
-For architectural standards and commit conventions, consult [AGENTS.md](AGENTS.md).
+## License
+ 
+This project is licensed under the [ISC License](package.json).
