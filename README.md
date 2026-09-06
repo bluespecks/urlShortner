@@ -41,6 +41,21 @@ Shortly is a production-quality URL shortener backend service built with Node.js
 ├── src/
 │   ├── config/
 │   │   └── db.js            # MongoDB connection and lifecycle handlers
+│   ├── controllers/
+│   │   └── urlController.js # URL route handlers
+│   ├── models/
+│   │   └── Url.js           # Mongoose model and schema validation
+│   ├── public/
+│   │   ├── app.js           # Frontend client application
+│   │   ├── index.html       # Web UI markup
+│   │   └── styles.css       # Unix-inspired stylesheet
+│   ├── routes/
+│   │   ├── redirectRoutes.js# Root redirect handler
+│   │   └── urlRoutes.js     # /api/urls router
+│   ├── services/
+│   │   └── urlService.js    # URL business logic and collision handling
+│   ├── utils/
+│   │   └── generateShortCode.js # Short code generation utility
 │   ├── app.js               # Express app, middleware, and route configuration
 │   └── server.js            # Server entrypoint and graceful shutdown listeners
 ├── .env.example             # Example environment variable configuration
@@ -95,6 +110,14 @@ npm run dev
 ```bash
 npm start
 ```
+
+## Web Interface
+
+Shortly includes a minimalist, Unix-inspired web interface:
+
+- Start the server (`npm run dev` or `npm start`).
+- Open `http://localhost:3000` in your web browser.
+- The interface communicates directly with `POST /api/urls` to shorten URLs, displays interactive copy/open controls, and queries `GET /health` to display live latency and service status.
 
 ## Available Scripts
 

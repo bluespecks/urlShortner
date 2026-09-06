@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const urlRoutes = require('./routes/urlRoutes');
 const redirectRoutes = require('./routes/redirectRoutes');
@@ -7,11 +8,18 @@ const app = express();
 // Enable JSON request parsing
 app.use(express.json());
 
+// Serve static assets from public directory (styles.css, app.js)
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
+
 // API routes
 app.use('/api/urls', urlRoutes);
 
-// Root endpoint: identifies the Shortly API
+// Root endpoint: serves UI to browsers (text/html) and JSON metadata to API clients
 app.get('/', (req, res) => {
+  const accept = req.headers.accept || '';
+  if (accept.includes('text/html')) {
+    return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  }
   res.status(200).json({
     name: 'Shortly API',
     version: '1.0.0',

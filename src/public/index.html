@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Shortly - A minimal, Unix-inspired URL shortener utility.">
+  <meta name="theme-color" content="#0c0e12">
+  <title>Shortly // URL Shortener</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell-container">
+    <!-- Shell Header -->
+    <header class="shell-header">
+      <div class="shell-brand">
+        <span class="brand-name">shortly</span>
+        <span class="brand-tag">// url shortener</span>
+      </div>
+      <div class="shell-meta">
+        <span class="version-tag">v1.0.0</span>
+      </div>
+    </header>
+
+    <hr class="rule" aria-hidden="true">
+
+    <!-- Main Workspace -->
+    <main class="shell-main">
+      <!-- Shorten Form -->
+      <form id="shorten-form" class="url-form" novalidate>
+        <div class="form-row-header">
+          <label for="url-input" class="label-tech">INPUT_URL</label>
+          <span class="tech-hint">[http:// or https://]</span>
+        </div>
+
+        <div class="input-row">
+          <span class="prompt-char" aria-hidden="true">$</span>
+          <input
+            type="url"
+            id="url-input"
+            name="originalUrl"
+            class="input-terminal"
+            placeholder="https://example.com/very/long/url/path..."
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            required
+          />
+          <button type="submit" id="submit-btn" class="btn-terminal" aria-label="Shorten URL">
+            <span id="submit-btn-text">[ ↵ shorten ]</span>
+          </button>
+        </div>
+      </form>
+
+      <hr class="rule" aria-hidden="true">
+
+      <!-- Status Line -->
+      <div class="status-banner" aria-live="polite">
+        <span id="state-tag" class="state-tag state-ready">READY</span>
+        <span id="state-detail" class="state-detail">less url. more signal.</span>
+      </div>
+
+      <!-- Result Card -->
+      <section id="result-card" class="card-result hidden" aria-live="polite">
+        <hr class="rule" aria-hidden="true">
+        <div class="result-header">
+          <span class="label-tech accent-text">RESULT // CREATED</span>
+          <span id="result-timestamp" class="tech-hint"></span>
+        </div>
+
+        <div class="result-body">
+          <div class="url-output">
+            <span class="prompt-char" aria-hidden="true">&gt;</span>
+            <a id="short-url-link" href="#" target="_blank" rel="noopener noreferrer" class="link-short"></a>
+          </div>
+          <div class="result-actions">
+            <button type="button" id="copy-btn" class="btn-terminal" aria-label="Copy short URL to clipboard">
+              <span id="copy-btn-text">[ copy ]</span>
+            </button>
+            <a id="open-btn" href="#" target="_blank" rel="noopener noreferrer" class="btn-terminal" aria-label="Open short URL in a new tab">
+              [ open ↗ ]
+            </a>
+          </div>
+        </div>
+
+        <div class="original-target">
+          <span class="label-tech">TARGET:</span>
+          <span id="original-url-display" class="target-text"></span>
+        </div>
+      </section>
+
+      <!-- Error Card -->
+      <section id="error-card" class="card-error hidden" aria-live="assertive">
+        <hr class="rule" aria-hidden="true">
+        <div class="error-body">
+          <span class="error-prefix">&gt; error:</span>
+          <span id="error-message" class="error-text"></span>
+        </div>
+      </section>
+    </main>
+
+    <hr class="rule" aria-hidden="true">
+
+    <!-- Status & Telemetry -->
+    <section class="shell-telemetry" aria-label="System status">
+      <div class="label-tech">SYSTEM_STATUS</div>
+      <div class="telemetry-grid">
+        <div class="telemetry-item">
+          <span class="telemetry-key">API</span>
+          <span id="api-status-val" class="telemetry-val">
+            <span class="dot-status online" aria-hidden="true">●</span> online
+          </span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-key">SERVICE</span>
+          <span id="service-status-val" class="telemetry-val">Shortly</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-key">LATENCY</span>
+          <span id="latency-val" class="telemetry-val">-- ms</span>
+        </div>
+      </div>
+    </section>
+
+    <hr class="rule" aria-hidden="true">
+
+    <!-- Footer -->
+    <footer class="shell-footer">
+      <span>shortly // local</span>
+      <span class="footer-spec">endpoint: POST /api/urls</span>
+    </footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
