@@ -47,4 +47,7 @@ const urlSchema = new mongoose.Schema(
 
 const Url = mongoose.model('Url', urlSchema);
 
+// Expose validator for reuse across controllers and services without logic duplication
+Url.validateUrl = validateUrl;
+
 module.exports = Url;

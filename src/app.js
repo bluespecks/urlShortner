@@ -1,9 +1,13 @@
 const express = require('express');
+const urlRoutes = require('./routes/urlRoutes');
 
 const app = express();
 
 // Enable JSON request parsing
 app.use(express.json());
+
+// API routes
+app.use('/api/urls', urlRoutes);
 
 // Root endpoint: identifies the Shortly API
 app.get('/', (req, res) => {
@@ -37,10 +41,22 @@ app.use((err, req, res, next) => {
     return next(err);
   }
   console.error('[App Error]', err);
-  const status = err.status || err.statusCode || 500;
+
+  let status = err.status || err.statusCode || 500;
+  let message = err.message || 'An unexpected error occurred';
+
+  if (err.name === 'ValidationError') {
+    status = 400;
+  }
+
+  // Prevent exposing internal stack traces or database details for 5xx errors
+  if (status >= 500) {
+    message = 'An unexpected internal error occurred';
+  }
+
   res.status(status).json({
     error: err.name || 'InternalServerError',
-    message: err.message || 'An unexpected error occurred',
+    message,
   });
 });
 

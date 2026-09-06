@@ -132,6 +132,30 @@ npm start
   }
   ```
 
+### URL Endpoints
+
+- **`POST /api/urls`**
+  Creates a shortened URL.
+
+  **Headers:**
+  - `Content-Type: application/json`
+
+  **Request Body:**
+  ```json
+  {
+    "originalUrl": "https://example.com/some/long/url"
+  }
+  ```
+
+  **Response (HTTP 201):**
+  ```json
+  {
+    "originalUrl": "https://example.com/some/long/url",
+    "shortCode": "abc123",
+    "shortUrl": "http://localhost:3000/abc123"
+  }
+  ```
+
 ## Guidelines
 
 Before contributing or creating pull requests, please read [AGENTS.md](AGENTS.md) for architectural guidelines and Conventional Commit conventions.
