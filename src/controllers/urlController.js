@@ -54,6 +54,39 @@ const createShortUrl = async (req, res, next) => {
   }
 };
 
+/**
+ * Handle short URL redirection requests.
+ * Validates short code, performs database lookup with atomic click increment,
+ * and redirects to originalUrl (or returns 404 if not found).
+ */
+const redirectToOriginalUrl = async (req, res, next) => {
+  try {
+    const rawCode = req.params.shortCode;
+    const shortCode = typeof rawCode === 'string' ? rawCode.trim() : '';
+
+    if (!shortCode) {
+      return res.status(404).json({
+        error: 'NotFound',
+        message: 'Short URL not found',
+      });
+    }
+
+    const urlDoc = await urlService.getOriginalUrlAndIncrementClicks(shortCode);
+
+    if (!urlDoc) {
+      return res.status(404).json({
+        error: 'NotFound',
+        message: 'Short URL not found',
+      });
+    }
+
+    return res.redirect(302, urlDoc.originalUrl);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createShortUrl,
+  redirectToOriginalUrl,
 };

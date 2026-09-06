@@ -1,5 +1,6 @@
 const express = require('express');
 const urlRoutes = require('./routes/urlRoutes');
+const redirectRoutes = require('./routes/redirectRoutes');
 
 const app = express();
 
@@ -26,6 +27,9 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Redirect route for short codes: mounted after /, /health, and /api/urls to prevent collision
+app.use('/', redirectRoutes);
 
 // JSON 404 handler for undefined routes
 app.use((req, res) => {

@@ -156,6 +156,19 @@ npm start
   }
   ```
 
+- **`GET /:shortCode`**
+  Redirects to the original URL associated with the short code and increments its click counter.
+
+  **Response:**
+  - `HTTP 302 Found` with `Location: <originalUrl>` on success
+  - `HTTP 404 Not Found` JSON if the short code does not exist:
+    ```json
+    {
+      "error": "NotFound",
+      "message": "Short URL not found"
+    }
+    ```
+
 ## Guidelines
 
 Before contributing or creating pull requests, please read [AGENTS.md](AGENTS.md) for architectural guidelines and Conventional Commit conventions.

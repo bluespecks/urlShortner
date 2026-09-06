@@ -55,6 +55,23 @@ const createShortUrl = async (originalUrl) => {
   }
 };
 
+/**
+ * Look up a URL document by its short code and atomically increment click count.
+ *
+ * @param {string} shortCode - The unique short code identifier.
+ * @returns {Promise<import('mongoose').Document | null>} The updated URL document or null if not found.
+ */
+const getOriginalUrlAndIncrementClicks = async (shortCode) => {
+  const urlDoc = await Url.findOneAndUpdate(
+    { shortCode: String(shortCode) },
+    { $inc: { clicks: 1 } },
+    { returnDocument: 'after' }
+  );
+
+  return urlDoc;
+};
+
 module.exports = {
   createShortUrl,
+  getOriginalUrlAndIncrementClicks,
 };
