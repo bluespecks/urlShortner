@@ -18,6 +18,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const copyBtn = document.getElementById('copy-btn');
   const copyBtnText = document.getElementById('copy-btn-text');
   const openBtn = document.getElementById('open-btn');
+  const qrBtn = document.getElementById('qr-btn');
+  const qrBtnText = document.getElementById('qr-btn-text');
+
+  const qrSection = document.getElementById('qr-section');
+  const qrImage = document.getElementById('qr-image');
+  const qrFeedback = document.getElementById('qr-feedback');
+  const qrDataText = document.getElementById('qr-data-text');
+  const downloadQrBtn = document.getElementById('download-qr-btn');
+  const downloadQrBtnText = document.getElementById('download-qr-btn-text');
 
   const errorCard = document.getElementById('error-card');
   const errorMessage = document.getElementById('error-message');
@@ -27,7 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const latencyVal = document.getElementById('latency-val');
 
   let currentShortUrl = '';
+  let currentShortCode = '';
+  let currentQrDataUrl = '';
   let copyTimeout = null;
+  let qrTimeout = null;
+  let downloadTimeout = null;
 
   // Auto-focus input on page load
   if (urlInput) {
@@ -62,9 +75,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function resetQrSection() {
+    if (qrSection) qrSection.classList.add('hidden');
+    currentQrDataUrl = '';
+    if (qrImage) {
+      qrImage.removeAttribute('src');
+      qrImage.alt = 'QR code';
+    }
+    if (qrDataText) qrDataText.textContent = '';
+    if (qrFeedback) qrFeedback.textContent = '[ encoded: short url ]';
+    if (qrBtnText) qrBtnText.textContent = '[ generate qr ]';
+    if (downloadQrBtnText) downloadQrBtnText.textContent = '[ download qr ]';
+    if (qrTimeout) {
+      clearTimeout(qrTimeout);
+      qrTimeout = null;
+    }
+    if (downloadTimeout) {
+      clearTimeout(downloadTimeout);
+      downloadTimeout = null;
+    }
+  }
+
   function hideOutputs() {
     resultCard.classList.add('hidden');
     errorCard.classList.add('hidden');
+    resetQrSection();
   }
 
   function showError(msg) {
@@ -77,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function showResult(data) {
     hideOutputs();
     currentShortUrl = data.shortUrl;
+    currentShortCode = data.shortCode;
 
     shortUrlLink.href = data.shortUrl;
     shortUrlLink.textContent = data.shortUrl;
@@ -172,8 +208,106 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Generate QR code client-side from currentShortUrl
+  function generateQrCode() {
+    if (!currentShortUrl) return;
+
+    try {
+      const qrFactory = window.qrcode || (typeof qrcode !== 'undefined' ? qrcode : null);
+      if (typeof qrFactory !== 'function') {
+        throw new Error('QR generator module unavailable');
+      }
+
+      // Generate QR code from the generated shortUrl (never the original long URL)
+      const qr = qrFactory(0, 'M');
+      qr.addData(currentShortUrl);
+      qr.make();
+
+      const moduleCount = qr.getModuleCount();
+      const margin = 4;
+      const totalModules = moduleCount + margin * 2;
+      const cellSize = 8;
+      const canvasSize = totalModules * cellSize;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
+      const ctx = canvas.getContext('2d');
+
+      // Quiet zone with white background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+      // Dark modules
+      ctx.fillStyle = '#000000';
+      for (let r = 0; r < moduleCount; r++) {
+        for (let c = 0; c < moduleCount; c++) {
+          if (qr.isDark(r, c)) {
+            ctx.fillRect((c + margin) * cellSize, (r + margin) * cellSize, cellSize, cellSize);
+          }
+        }
+      }
+
+      // Convert to lossless PNG data URL
+      currentQrDataUrl = canvas.toDataURL('image/png');
+
+      qrImage.src = currentQrDataUrl;
+      qrImage.alt = `QR code for ${currentShortUrl}`;
+      qrDataText.textContent = currentShortUrl;
+      qrFeedback.textContent = '[ encoded: short url ]';
+
+      qrSection.classList.remove('hidden');
+
+      qrBtnText.textContent = '> qr ready';
+      if (qrTimeout) clearTimeout(qrTimeout);
+      qrTimeout = setTimeout(() => {
+        qrBtnText.textContent = '[ generate qr ]';
+      }, 1800);
+    } catch (err) {
+      console.error('[Shortly QR Error]', err);
+      qrFeedback.textContent = '! failed to generate qr';
+      showError('Failed to generate QR code');
+    }
+  }
+
+  // Download QR code as PNG image
+  function downloadQrCode() {
+    if (!currentQrDataUrl || !currentShortCode) return;
+
+    try {
+      const filename = `shortly-${currentShortCode}-qr.png`;
+      const downloadLink = document.createElement('a');
+      downloadLink.href = currentQrDataUrl;
+      downloadLink.download = filename;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      downloadQrBtnText.textContent = '> downloaded';
+      if (downloadTimeout) clearTimeout(downloadTimeout);
+      downloadTimeout = setTimeout(() => {
+        downloadQrBtnText.textContent = '[ download qr ]';
+      }, 1800);
+    } catch (err) {
+      console.error('[Shortly QR Download Error]', err);
+      downloadQrBtnText.textContent = '! download failed';
+      if (downloadTimeout) clearTimeout(downloadTimeout);
+      downloadTimeout = setTimeout(() => {
+        downloadQrBtnText.textContent = '[ download qr ]';
+      }, 1800);
+    }
+  }
+
   // Copy button listener
   copyBtn.addEventListener('click', copyToClipboard);
+
+  // QR button listeners
+  if (qrBtn) {
+    qrBtn.addEventListener('click', generateQrCode);
+  }
+  if (downloadQrBtn) {
+    downloadQrBtn.addEventListener('click', downloadQrCode);
+  }
 
   // Keyboard shortcut: Escape to reset
   window.addEventListener('keydown', (e) => {

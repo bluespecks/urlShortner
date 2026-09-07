@@ -34,6 +34,7 @@ Shortly is a minimal, production-quality URL shortener service built with Node.j
 - **Robust Input Validation**: Strict validation for absolute HTTP/HTTPS protocols and short-code format sanitization.
 - **Rate Limiting**: Built-in rolling-window limiter restricting URL creation to 30 requests per minute per IP.
 - **Security Headers**: Hardened with Helmet (Content Security Policy, X-Frame-Options, X-Content-Type-Options nosniff).
+- **Client-Side QR Code Generation**: Generates and downloads high-resolution PNG QR codes for shortened URLs on demand without external tracking or server roundtrips.
 - **Unix-Inspired Web Interface**: Minimalist, keyboard-first developer interface with zero frontend framework overhead.
 - **Graceful Lifecycle Management**: Sequential DB-first startup and graceful shutdown hooks for SIGINT/SIGTERM.
 - **Health & Telemetry**: `/health` endpoint reporting uptime, service metadata, and client-measured roundtrip latency.
@@ -78,6 +79,8 @@ Shortly is a minimal, production-quality URL shortener service built with Node.j
 │   ├── models/
 │   │   └── Url.js           # Mongoose model, schema validation, and unique indexes
 │   ├── public/
+│   │   ├── vendor/
+│   │   │   └── qrcode.js    # Lightweight client-side QR generator library
 │   │   ├── app.js           # Frontend client application
 │   │   ├── index.html       # Minimalist Unix-style markup
 │   │   └── styles.css       # Monospace stylesheet
@@ -207,6 +210,7 @@ Shortly includes a minimalist, Unix-inspired web interface:
 - Start the application and navigate to `http://localhost:3000` in any web browser.
 - Enter any valid HTTP or HTTPS URL and press `Enter` or click `[ ↵ shorten ]`.
 - Copy the resulting short link with `[ copy ]` (provides visual `> copied` feedback) or test it directly with `[ open ↗ ]`.
+- Generate a QR code containing the short URL on demand with `[ generate qr ]`, and download it directly as a high-resolution PNG (`shortly-<shortCode>-qr.png`) via `[ download qr ]`.
 - Live latency and API connectivity are continuously checked via `/health`.
 
 ## Available Scripts
