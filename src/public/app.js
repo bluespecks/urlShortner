@@ -129,30 +129,46 @@ document.addEventListener('DOMContentLoaded', () => {
   async function copyToClipboard() {
     if (!currentShortUrl) return;
 
+    let copied = false;
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(currentShortUrl);
-      } else {
-        // Fallback for non-https/legacy
+        copied = true;
+      }
+    } catch {
+      // Fall through to textarea fallback
+    }
+
+    if (!copied) {
+      try {
         const temp = document.createElement('textarea');
         temp.value = currentShortUrl;
-        temp.style.position = 'fixed';
-        temp.style.opacity = '0';
+        temp.setAttribute('readonly', '');
+        temp.style.position = 'absolute';
+        temp.style.left = '-9999px';
+        temp.style.top = `${window.scrollY || document.documentElement.scrollTop || 0}px`;
         document.body.appendChild(temp);
-        temp.focus();
         temp.select();
-        document.execCommand('copy');
+        temp.setSelectionRange(0, temp.value.length);
+        copied = document.execCommand('copy');
         document.body.removeChild(temp);
+      } catch {
+        copied = false;
       }
+    }
 
-      copyBtnText.textContent = '> copied';
+    if (copied) {
+      copyBtnText.textContent = '[ copied! ]';
+      copyBtn.classList.add('btn-copied');
       if (copyTimeout) clearTimeout(copyTimeout);
       copyTimeout = setTimeout(() => {
         copyBtnText.textContent = '[ copy ]';
+        copyBtn.classList.remove('btn-copied');
       }, 1800);
-    } catch {
-      copyBtnText.textContent = '! failed';
-      setTimeout(() => {
+    } else {
+      copyBtnText.textContent = '[ copy failed ]';
+      if (copyTimeout) clearTimeout(copyTimeout);
+      copyTimeout = setTimeout(() => {
         copyBtnText.textContent = '[ copy ]';
       }, 1800);
     }
@@ -219,14 +235,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Generate QR code from the generated shortUrl (never the original long URL)
+      // Level 'M' provides standard 15% error recovery
       const qr = qrFactory(0, 'M');
       qr.addData(currentShortUrl);
       qr.make();
 
       const moduleCount = qr.getModuleCount();
-      const margin = 4;
+      const margin = 4; // ISO/IEC 18004 required quiet zone
       const totalModules = moduleCount + margin * 2;
-      const cellSize = 8;
+
+      // High-resolution canvas rendering (approx 880px - 960px) for crisp display and download
+      const minTargetSize = 880;
+      const cellSize = Math.max(20, Math.ceil(minTargetSize / totalModules));
       const canvasSize = totalModules * cellSize;
 
       const canvas = document.createElement('canvas');
@@ -234,12 +254,12 @@ document.addEventListener('DOMContentLoaded', () => {
       canvas.height = canvasSize;
       const ctx = canvas.getContext('2d');
 
-      // Quiet zone with white background
+      // High-contrast clean white quiet zone and background for 100% reliable scanning
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvasSize, canvasSize);
 
-      // Dark modules
-      ctx.fillStyle = '#000000';
+      // Dark modules styled with Shortly's terminal dark token #0c0e12
+      ctx.fillStyle = '#0c0e12';
       for (let r = 0; r < moduleCount; r++) {
         for (let c = 0; c < moduleCount; c++) {
           if (qr.isDark(r, c)) {
@@ -248,15 +268,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Convert to lossless PNG data URL
+      // Lossless high-res PNG data URL
       currentQrDataUrl = canvas.toDataURL('image/png');
 
       qrImage.src = currentQrDataUrl;
       qrImage.alt = `QR code for ${currentShortUrl}`;
-      qrDataText.textContent = currentShortUrl;
-      qrFeedback.textContent = '[ encoded: short url ]';
+      if (qrDataText) qrDataText.textContent = currentShortUrl;
+      if (qrFeedback) qrFeedback.textContent = '[ encoded: short url ]';
 
       qrSection.classList.remove('hidden');
+
+      // Smooth scroll QR into view on mobile / narrow viewports
+      qrSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
       qrBtnText.textContent = '> qr ready';
       if (qrTimeout) clearTimeout(qrTimeout);
@@ -265,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 1800);
     } catch (err) {
       console.error('[Shortly QR Error]', err);
-      qrFeedback.textContent = '! failed to generate qr';
+      if (qrFeedback) qrFeedback.textContent = '! failed to generate qr';
       showError('Failed to generate QR code');
     }
   }
@@ -279,6 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const downloadLink = document.createElement('a');
       downloadLink.href = currentQrDataUrl;
       downloadLink.download = filename;
+      downloadLink.rel = 'noopener';
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
