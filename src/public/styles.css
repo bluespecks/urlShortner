@@ -405,8 +405,10 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #ffffff;
-  border: 1px solid var(--border-color);
+  background-color: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
   width: 100%;
   max-width: 300px;
   aspect-ratio: 1 / 1;
@@ -421,6 +423,221 @@ body {
   height: auto;
   aspect-ratio: 1 / 1;
   image-rendering: pixelated;
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+
+/* QR Color Customizer */
+.qr-color-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.qr-color-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.btn-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.625rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  user-select: none;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-color:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.btn-color.active {
+  border-color: var(--accent-color);
+  color: var(--text-primary);
+  background-color: rgba(63, 185, 80, 0.08);
+}
+
+.btn-color:focus-visible,
+.btn-color-custom:focus-within {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+
+.color-dot {
+  display: inline-block;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.color-dot-white {
+  background-color: #e6edf3;
+}
+
+.color-dot-green {
+  background-color: #3fb950;
+}
+
+.color-dot-cyan {
+  background-color: #58a6ff;
+}
+
+.color-dot-amber {
+  background-color: #e3b341;
+}
+
+.color-dot-custom {
+  background-color: #bc8cff;
+}
+
+.btn-color-custom {
+  position: relative;
+  cursor: pointer;
+}
+
+/* Custom Hex Popover */
+.hex-popover {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  width: 100%;
+  max-width: 320px;
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  padding: 0.75rem 0.875rem;
+  margin-top: 0.25rem;
+  box-sizing: border-box;
+}
+
+.hex-popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-picker-close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 0 0.25rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.btn-picker-close:hover {
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+}
+
+.hex-popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hex-input-wrapper {
+  display: flex;
+  align-items: stretch;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  transition: border-color var(--transition-fast);
+}
+
+.hex-input-wrapper:focus-within {
+  border-color: var(--border-focus);
+}
+
+.hex-prefix {
+  display: flex;
+  align-items: center;
+  padding-left: 0.625rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  user-select: none;
+}
+
+.hex-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  outline: none;
+  min-width: 0;
+  text-transform: lowercase;
+}
+
+.hex-input::placeholder {
+  color: var(--text-muted);
+}
+
+.btn-hex-apply {
+  border: none;
+  border-left: 1px solid var(--border-color);
+  background-color: transparent;
+  padding: 0.4rem 0.625rem;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--accent-color);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-hex-apply:hover {
+  background-color: rgba(63, 185, 80, 0.1);
+  color: #56d364;
+}
+
+.hex-popover-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.hex-preview-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--text-secondary);
+}
+
+.hex-preview-text {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-primary);
+}
+
+.hex-error-hint {
+  color: var(--error-color);
+  font-size: 0.6875rem;
 }
 
 .qr-meta {

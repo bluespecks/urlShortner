@@ -6,7 +6,7 @@
   <meta name="description" content="Shortly - A minimal, Unix-inspired URL shortener utility.">
   <meta name="theme-color" content="#0c0e12">
   <title>Shortly // URL Shortener</title>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/styles.css?v=1.3.0">
 </head>
 <body>
   <div class="shell-container">
@@ -106,6 +106,66 @@
             </div>
           </div>
 
+          <div class="qr-color-section">
+            <span class="label-tech">COLOR:</span>
+            <div class="qr-color-options" role="radiogroup" aria-label="QR color options">
+              <button type="button" class="btn-terminal btn-color active" data-color="#e6edf3" aria-label="White" aria-checked="true" role="radio">
+                <span class="color-dot color-dot-white" aria-hidden="true"></span>
+                <span>white</span>
+              </button>
+              <button type="button" class="btn-terminal btn-color" data-color="#3fb950" aria-label="Green" aria-checked="false" role="radio">
+                <span class="color-dot color-dot-green" aria-hidden="true"></span>
+                <span>green</span>
+              </button>
+              <button type="button" class="btn-terminal btn-color" data-color="#58a6ff" aria-label="Cyan" aria-checked="false" role="radio">
+                <span class="color-dot color-dot-cyan" aria-hidden="true"></span>
+                <span>cyan</span>
+              </button>
+              <button type="button" class="btn-terminal btn-color" data-color="#e3b341" aria-label="Amber" aria-checked="false" role="radio">
+                <span class="color-dot color-dot-amber" aria-hidden="true"></span>
+                <span>amber</span>
+              </button>
+              <button type="button" id="custom-color-btn" class="btn-terminal btn-color btn-color-custom" aria-label="Custom hex color" aria-checked="false" role="radio">
+                <span class="color-dot color-dot-custom" id="custom-color-dot" aria-hidden="true"></span>
+                <span>custom</span>
+              </button>
+            </div>
+
+            <!-- Dark Hex Color Popover -->
+            <div id="hex-popover" class="hex-popover hidden" role="region" aria-label="Custom Hex Color Picker">
+              <div class="hex-popover-header">
+                <span class="label-tech">&gt; CUSTOM_HEX</span>
+                <button type="button" id="hex-close-btn" class="btn-picker-close" aria-label="Close hex picker">[ × ]</button>
+              </div>
+              <div class="hex-popover-body">
+                <div class="hex-input-wrapper">
+                  <span class="hex-prefix" aria-hidden="true">#</span>
+                  <input
+                    type="text"
+                    id="hex-color-input"
+                    class="input-terminal hex-input"
+                    value="bc8cff"
+                    placeholder="bc8cff"
+                    maxlength="7"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    aria-label="Hex color value"
+                  />
+                  <button type="button" id="hex-apply-btn" class="btn-hex-apply" aria-label="Apply hex color">[ apply ]</button>
+                </div>
+                <div class="hex-popover-footer">
+                  <div class="hex-preview-badge">
+                    <span id="hex-preview-dot" class="color-dot color-dot-custom" aria-hidden="true"></span>
+                    <span id="hex-preview-label" class="hex-preview-text">#bc8cff</span>
+                  </div>
+                  <span id="hex-error-hint" class="hex-error-hint" aria-live="polite"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="qr-meta">
             <span class="qr-meta-title">Short URL QR</span>
             <span id="qr-data-text" class="qr-meta-target target-text"></span>
@@ -162,6 +222,6 @@
   </div>
 
   <script src="/vendor/qrcode.js"></script>
-  <script src="/app.js"></script>
+  <script src="/app.js?v=1.3.0"></script>
 </body>
 </html>

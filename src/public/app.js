@@ -38,9 +38,22 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentShortUrl = '';
   let currentShortCode = '';
   let currentQrDataUrl = '';
+  let currentQrFgColor = '#e6edf3';
+  let customHexColor = '#bc8cff';
   let copyTimeout = null;
   let qrTimeout = null;
   let downloadTimeout = null;
+
+  const colorBtns = document.querySelectorAll('.btn-color[data-color]');
+  const customColorBtn = document.getElementById('custom-color-btn');
+  const customColorDot = document.getElementById('custom-color-dot');
+  const hexPopover = document.getElementById('hex-popover');
+  const hexCloseBtn = document.getElementById('hex-close-btn');
+  const hexColorInput = document.getElementById('hex-color-input');
+  const hexApplyBtn = document.getElementById('hex-apply-btn');
+  const hexPreviewDot = document.getElementById('hex-preview-dot');
+  const hexPreviewLabel = document.getElementById('hex-preview-label');
+  const hexErrorHint = document.getElementById('hex-error-hint');
 
   // Auto-focus input on page load
   if (urlInput) {
@@ -77,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function resetQrSection() {
     if (qrSection) qrSection.classList.add('hidden');
+    if (hexPopover) hexPopover.classList.add('hidden');
     currentQrDataUrl = '';
     if (qrImage) {
       qrImage.removeAttribute('src');
@@ -254,12 +268,12 @@ document.addEventListener('DOMContentLoaded', () => {
       canvas.height = canvasSize;
       const ctx = canvas.getContext('2d');
 
-      // High-contrast clean white quiet zone and background for 100% reliable scanning
-      ctx.fillStyle = '#ffffff';
+      // Theme-blended background using Shortly's terminal dark token #0c0e12
+      ctx.fillStyle = '#0c0e12';
       ctx.fillRect(0, 0, canvasSize, canvasSize);
 
-      // Dark modules styled with Shortly's terminal dark token #0c0e12
-      ctx.fillStyle = '#0c0e12';
+      // Customizable foreground modules (default Shortly text-primary #e6edf3)
+      ctx.fillStyle = currentQrFgColor || '#e6edf3';
       for (let r = 0; r < moduleCount; r++) {
         for (let c = 0; c < moduleCount; c++) {
           if (qr.isDark(r, c)) {
@@ -291,6 +305,145 @@ document.addEventListener('DOMContentLoaded', () => {
       if (qrFeedback) qrFeedback.textContent = '! failed to generate qr';
       showError('Failed to generate QR code');
     }
+  }
+
+  // Helper to normalize and validate 3 or 6 hex digits
+  function normalizeHex(val) {
+    let clean = (val || '').trim().replace(/^#/, '');
+    if (/^[0-9a-fA-F]{3}$/.test(clean)) {
+      clean = clean[0] + clean[0] + clean[1] + clean[1] + clean[2] + clean[2];
+    }
+    if (/^[0-9a-fA-F]{6}$/.test(clean)) {
+      return '#' + clean.toLowerCase();
+    }
+    return null;
+  }
+
+  // Set QR foreground color and optionally re-render active QR
+  function setQrColor(newColor, activeElement) {
+    if (!newColor) return;
+    currentQrFgColor = newColor;
+
+    // Update active and aria-checked states
+    document.querySelectorAll('.btn-color').forEach((btn) => {
+      btn.classList.remove('active');
+      btn.setAttribute('aria-checked', 'false');
+    });
+
+    if (activeElement) {
+      activeElement.classList.add('active');
+      activeElement.setAttribute('aria-checked', 'true');
+    }
+
+    // Immediately re-generate QR if code is already displayed
+    if (currentShortUrl && qrSection && !qrSection.classList.contains('hidden')) {
+      generateQrCode();
+    }
+  }
+
+  // Apply custom hex color
+  function applyCustomHex(rawVal, shouldClosePopover = false) {
+    const validHex = normalizeHex(rawVal);
+    if (!validHex) {
+      if (hexErrorHint) hexErrorHint.textContent = '! invalid hex';
+      return false;
+    }
+
+    if (hexErrorHint) hexErrorHint.textContent = '';
+    customHexColor = validHex;
+    if (customColorDot) customColorDot.style.backgroundColor = validHex;
+    if (hexPreviewDot) hexPreviewDot.style.backgroundColor = validHex;
+    if (hexPreviewLabel) hexPreviewLabel.textContent = validHex;
+    if (hexColorInput) hexColorInput.value = validHex.replace(/^#/, '');
+
+    setQrColor(validHex, customColorBtn);
+
+    if (shouldClosePopover && hexPopover) {
+      hexPopover.classList.add('hidden');
+    }
+    return true;
+  }
+
+  // Bind color preset buttons
+  colorBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (hexPopover) hexPopover.classList.add('hidden');
+      setQrColor(btn.dataset.color, btn);
+    });
+  });
+
+  // Toggle custom hex popover
+  if (customColorBtn) {
+    customColorBtn.addEventListener('click', () => {
+      const isCurrentlyOpen = hexPopover && !hexPopover.classList.contains('hidden');
+      if (isCurrentlyOpen) {
+        hexPopover.classList.add('hidden');
+      } else {
+        if (hexPopover) {
+          hexPopover.classList.remove('hidden');
+          if (hexColorInput) {
+            hexColorInput.value = customHexColor.replace(/^#/, '');
+            hexColorInput.focus();
+            hexColorInput.select();
+          }
+        }
+      }
+      setQrColor(customHexColor, customColorBtn);
+    });
+  }
+
+  // Close custom hex popover button
+  if (hexCloseBtn) {
+    hexCloseBtn.addEventListener('click', () => {
+      if (hexPopover) hexPopover.classList.add('hidden');
+      if (customColorBtn) customColorBtn.focus();
+    });
+  }
+
+  // Live input in custom hex field
+  if (hexColorInput) {
+    hexColorInput.addEventListener('input', (e) => {
+      const raw = e.target.value.trim();
+      const valid = normalizeHex(raw);
+      if (valid) {
+        if (hexErrorHint) hexErrorHint.textContent = '';
+        if (hexPreviewDot) hexPreviewDot.style.backgroundColor = valid;
+        if (hexPreviewLabel) hexPreviewLabel.textContent = valid;
+        if (customColorDot) customColorDot.style.backgroundColor = valid;
+        customHexColor = valid;
+        setQrColor(valid, customColorBtn);
+      } else {
+        if (raw.length > 0) {
+          const clean = raw.replace(/^#/, '');
+          if (!/^[0-9a-fA-F#]+$/.test(raw)) {
+            if (hexErrorHint) hexErrorHint.textContent = '! 0-9, a-f only';
+          } else if (clean.length > 6) {
+            if (hexErrorHint) hexErrorHint.textContent = '! max 6 digits';
+          } else {
+            if (hexErrorHint) hexErrorHint.textContent = '';
+          }
+        } else {
+          if (hexErrorHint) hexErrorHint.textContent = '';
+        }
+      }
+    });
+
+    hexColorInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        applyCustomHex(hexColorInput.value, true);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        if (hexPopover) hexPopover.classList.add('hidden');
+        if (customColorBtn) customColorBtn.focus();
+      }
+    });
+  }
+
+  if (hexApplyBtn) {
+    hexApplyBtn.addEventListener('click', () => {
+      applyCustomHex(hexColorInput.value, true);
+    });
   }
 
   // Download QR code as PNG image
@@ -333,9 +486,14 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadQrBtn.addEventListener('click', downloadQrCode);
   }
 
-  // Keyboard shortcut: Escape to reset
+  // Keyboard shortcut: Escape to close hex popover or reset workspace
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      if (hexPopover && !hexPopover.classList.contains('hidden')) {
+        hexPopover.classList.add('hidden');
+        if (customColorBtn) customColorBtn.focus();
+        return;
+      }
       hideOutputs();
       setState('ready');
       urlInput.value = '';
