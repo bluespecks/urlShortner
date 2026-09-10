@@ -238,6 +238,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Keyboard submission: Ctrl+Enter (Windows/Linux) or Cmd+Enter (macOS)
+  form.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      if (submitBtn && submitBtn.disabled) {
+        return;
+      }
+      if (typeof form.requestSubmit === 'function') {
+        form.requestSubmit(submitBtn);
+      } else {
+        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    }
+  });
+
   // Generate QR code client-side from currentShortUrl
   function generateQrCode() {
     if (!currentShortUrl) return;
